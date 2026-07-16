@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selector Aleatorio</title>
+    <title>Selector Aleatorio - Dark Mode</title>
     <style>
         :root {
-            --bg-color: #f4f7f6;
-            --card-color: #ffffff;
-            --text-color: #2c3e50;
-            --accent-color: #3498db;
+            /* Colores inspirados en interfaces oscuras modernas como Gemini */
+            --bg-color: #0f0f11;
+            --card-color: #1e1f22;
+            --text-color: #f0f4f9;
+            --text-secondary: #9aa0a6;
+            --accent-color: #a8c7fa; /* Azul claro suave */
+            --accent-gradient: linear-gradient(135deg, #a8c7fa 0%, #c2e7ff 100%);
+            --border-color: #333538;
         }
 
         body {
@@ -28,80 +32,102 @@
             text-align: center;
             background: var(--card-color);
             padding: 2.5rem;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
             max-width: 500px;
             width: 90%;
+            box-sizing: border-box;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.1rem;
+            margin-top: 0;
             margin-bottom: 2rem;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            font-weight: 600;
         }
 
         #visualizador {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 2rem 0;
-            min-height: 80px;
+            font-size: 2.8rem;
+            font-weight: 600;
+            margin: 2.5rem 0;
+            min-height: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--accent-color);
-            transition: transform 0.2s ease;
+            /* Aplicamos el degradado brillante al texto */
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+            line-height: 1.2;
         }
 
         .controles {
             margin-top: 2rem;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 1.2rem;
             align-items: center;
+        }
+
+        .selector-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         label {
             font-size: 0.9rem;
-            font-weight: 600;
+            color: var(--text-secondary);
         }
 
         select {
-            padding: 8px 15px;
-            font-size: 1rem;
-            border-radius: 5px;
-            border: 2px solid #bdc3c7;
-            background: white;
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: #131314;
+            color: var(--text-color);
             cursor: pointer;
             outline: none;
-            transition: border-color 0.3s;
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
         select:focus {
             border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(168, 199, 250, 0.2);
         }
 
         button {
-            background-color: var(--accent-color);
-            color: white;
+            background: var(--accent-gradient);
+            color: #0f0f11; /* Texto oscuro para contrastar con el botón claro */
             border: none;
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 5px;
+            padding: 12px 28px;
+            font-size: 0.95rem;
+            border-radius: 30px; /* Estilo píldora muy moderno */
             cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
+            font-weight: 600;
+            transition: transform 0.1s ease, opacity 0.2s;
+            box-shadow: 0 4px 15px rgba(168, 199, 250, 0.2);
         }
 
         button:hover {
-            background-color: #2980b9;
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.97);
         }
 
         #status {
             font-size: 0.85rem;
-            color: #e74c3c;
+            color: #f28b82; /* Rojo suave para errores en tema oscuro */
             margin-top: 10px;
+            max-width: 90%;
         }
     </style>
 </head>
@@ -110,11 +136,12 @@
 <div class="container">
     <h1>Elemento Aleatorio</h1>
     
-    <div id="visualizador">Cargando elementos...</div>
+    <!-- Aquí se mostrará el elemento seleccionado -->
+    <div id="visualizador">Cargando...</div>
 
     <div class="controles">
-        <div>
-            <label for="intervalo">Cambiar cada: </label>
+        <div class="selector-wrapper">
+            <label for="intervalo">Intervalo:</label>
             <select id="intervalo">
                 <option value="5000">5 segundos</option>
                 <option value="10000">10 segundos</option>
@@ -123,7 +150,7 @@
             </select>
         </div>
         
-        <button id="btnSiguiente">Siguiente ahora</button>
+        <button id="btnSiguiente">Siguiente</button>
         <div id="status"></div>
     </div>
 </div>
@@ -137,17 +164,15 @@
     const btnSiguiente = document.getElementById('btnSiguiente');
     const statusDiv = document.getElementById('status');
 
-    // 1. Función para leer el archivo TXT
+    // 1. Cargar el archivo TXT
     async function cargarElementos() {
         try {
-            // Buscamos el archivo elementos.txt en la misma carpeta
             const respuesta = await fetch('elementos.txt');
             if (!respuesta.ok) {
-                throw new Error('No se pudo cargar el archivo elementos.txt');
+                throw new Error('No se pudo abrir el archivo elementos.txt');
             }
             const texto = await respuesta.text();
             
-            // Dividimos el texto por saltos de línea y limpiamos espacios vacíos
             elementos = texto.split('\n')
                              .map(linea => linea.trim())
                              .filter(linea => linea.length > 0);
@@ -157,57 +182,51 @@
                 return;
             }
 
-            statusDiv.textContent = ""; // Limpiar errores si los había
+            statusDiv.textContent = ""; 
             mostrarElementoAleatorio();
             iniciarTemporizador();
 
         } catch (error) {
             console.error(error);
             visualizador.textContent = "Error";
-            statusDiv.textContent = "Por favor, asegúrate de que 'elementos.txt' existe en la misma carpeta y estás usando un servidor local.";
+            statusDiv.textContent = "Verifica que 'elementos.txt' esté en la misma carpeta del repositorio de GitHub.";
         }
     }
 
-    // 2. Función para elegir y mostrar un elemento al azar
+    // 2. Elegir y mostrar elemento
     function mostrarElementoAleatorio() {
         if (elementos.length === 0) return;
         
-        // Efecto visual rápido al cambiar
-        visualizador.style.transform = 'scale(0.9)';
+        // Animación suave de cambio
+        visualizador.style.opacity = '0';
+        visualizador.style.transform = 'scale(0.95)';
         
         setTimeout(() => {
             const indiceAleatorio = Math.floor(Math.random() * elementos.length);
             visualizador.textContent = elementos[indiceAleatorio];
+            visualizador.style.opacity = '1';
             visualizador.style.transform = 'scale(1)';
-        }, 100);
+        }, 150);
     }
 
-    // 3. Control del Temporizador
+    // 3. Temporizador
     function iniciarTemporizador() {
-        // Limpiamos cualquier temporizador previo
         clearInterval(temporizador);
-        
         const tiempoMs = parseInt(selectorIntervalo.value);
-        
         temporizador = setInterval(() => {
             mostrarElementoAleatorio();
         }, tiempoMs);
     }
 
-    // --- Eventos ---
+    // Eventos
+    selectorIntervalo.addEventListener('change', iniciarTemporizador);
 
-    // Cambiar el intervalo cuando el usuario elija otra opción
-    selectorIntervalo.addEventListener('change', () => {
-        iniciarTemporizador();
-    });
-
-    // Botón para forzar el cambio inmediato y reiniciar el contador
     btnSiguiente.addEventListener('click', () => {
         mostrarElementoAleatorio();
-        iniciarTemporizador(); // Reinicia el tiempo para que no cambie justo después de hacer clic
+        iniciarTemporizador(); // Reinicia el contador para que no salte inmediatamente después del clic
     });
 
-    // Iniciar la app cargando los elementos
+    // Arrancar la app
     cargarElementos();
 </script>
 

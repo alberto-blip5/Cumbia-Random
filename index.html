@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector Aleatorio</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-color: #ffffff;
+            --text-color: #2c3e50;
+            --accent-color: #3498db;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background: var(--card-color);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #visualizador {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 2rem 0;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-color);
+            transition: transform 0.2s ease;
+        }
+
+        .controles {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        select {
+            padding: 8px 15px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 2px solid #bdc3c7;
+            background: white;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #status {
+            font-size: 0.85rem;
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Elemento Aleatorio</h1>
+    
+    <div id="visualizador">Cargando elementos...</div>
+
+    <div class="controles">
+        <div>
+            <label for="intervalo">Cambiar cada: </label>
+            <select id="intervalo">
+                <option value="5000">5 segundos</option>
+                <option value="10000">10 segundos</option>
+                <option value="15000">15 segundos</option>
+                <option value="30000">30 segundos</option>
+            </select>
+        </div>
+        
+        <button id="btnSiguiente">Siguiente ahora</button>
+        <div id="status"></div>
+    </div>
+</div>
+
+<script>
+    let elementos = [];
+    let temporizador = null;
+    
+    const visualizador = document.getElementById('visualizador');
+    const selectorIntervalo = document.getElementById('intervalo');
+    const btnSiguiente = document.getElementById('btnSiguiente');
+    const statusDiv = document.getElementById('status');
+
+    // 1. Función para leer el archivo TXT
+    async function cargarElementos() {
+        try {
+            // Buscamos el archivo elementos.txt en la misma carpeta
+            const respuesta = await fetch('elementos.txt');
+            if (!respuesta.ok) {
+                throw new Error('No se pudo cargar el archivo elementos.txt');
+            }
+            const texto = await respuesta.text();
+            
+            // Dividimos el texto por saltos de línea y limpiamos espacios vacíos
+            elementos = texto.split('\n')
+                             .map(linea => linea.trim())
+                             .filter(linea => linea.length > 0);
+
+            if (elementos.length === 0) {
+                visualizador.textContent = "El archivo está vacío";
+                return;
+            }
+
+            statusDiv.textContent = ""; // Limpiar errores si los había
+            mostrarElementoAleatorio();
+            iniciarTemporizador();
+
+        } catch (error) {
+            console.error(error);
+            visualizador.textContent = "Error";
+            statusDiv.textContent = "Por favor, asegúrate de que 'elementos.txt' existe en la misma carpeta y estás usando un servidor local.";
+        }
+    }
+
+    // 2. Función para elegir y mostrar un elemento al azar
+    function mostrarElementoAleatorio() {
+        if (elementos.length === 0) return;
+        
+        // Efecto visual rápido al cambiar
+        visualizador.style.transform = 'scale(0.9)';
+        
+        setTimeout(() => {
+            const indiceAleatorio = Math.floor(Math.random() * elementos.length);
+            visualizador.textContent = elementos[indiceAleatorio];
+            visualizador.style.transform = 'scale(1)';
+        }, 100);
+    }
+
+    // 3. Control del Temporizador
+    function iniciarTemporizador() {
+        // Limpiamos cualquier temporizador previo
+        clearInterval(temporizador);
+        
+        const tiempoMs = parseInt(selectorIntervalo.value);
+        
+        temporizador = setInterval(() => {
+            mostrarElementoAleatorio();
+        }, tiempoMs);
+    }
+
+    // --- Eventos ---
+
+    // Cambiar el intervalo cuando el usuario elija otra opción
+    selectorIntervalo.addEventListener('change', () => {
+        iniciarTemporizador();
+    });
+
+    // Botón para forzar el cambio inmediato y reiniciar el contador
+    btnSiguiente.addEventListener('click', () => {
+        mostrarElementoAleatorio();
+        iniciarTemporizador(); // Reinicia el tiempo para que no cambie justo después de hacer clic
+    });
+
+    // Iniciar la app cargando los elementos
+    cargarElementos();
+</script>
+
+</body>
+</html>

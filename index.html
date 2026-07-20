@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selector Aleatorio - Dark Mode</title>
+    <title>Selector de Pasos de Baile</title>
     <style>
         :root {
-            /* Colores inspirados en interfaces oscuras modernas como Gemini */
             --bg-color: #0f0f11;
             --card-color: #1e1f22;
             --text-color: #f0f4f9;
             --text-secondary: #9aa0a6;
-            --accent-color: #a8c7fa; /* Azul claro suave */
+            --accent-color: #a8c7fa;
             --accent-gradient: linear-gradient(135deg, #a8c7fa 0%, #c2e7ff 100%);
             --border-color: #333538;
+            --pause-color: #f28b82;
         }
 
         body {
@@ -43,22 +43,39 @@
         h1 {
             font-size: 1.1rem;
             margin-top: 0;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 2px;
             font-weight: 600;
         }
 
-        #visualizador {
-            font-size: 2.8rem;
+        #estado-timer {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 1rem;
             font-weight: 600;
-            margin: 2.5rem 0;
+            background-color: rgba(168, 199, 250, 0.1);
+            color: var(--accent-color);
+        }
+
+        #estado-timer.en-pausa {
+            background-color: rgba(242, 139, 130, 0.1);
+            color: var(--pause-color);
+        }
+
+        #visualizador {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin: 1.5rem 0 2.5rem 0;
             min-height: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
-            /* Aplicamos el degradado brillante al texto */
             background: var(--accent-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -67,7 +84,6 @@
         }
 
         .controles {
-            margin-top: 2rem;
             display: flex;
             flex-direction: column;
             gap: 1.2rem;
@@ -78,6 +94,8 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         label {
@@ -102,17 +120,37 @@
             box-shadow: 0 0 0 2px rgba(168, 199, 250, 0.2);
         }
 
+        .botones-grupo {
+            display: flex;
+            gap: 12px;
+            margin-top: 0.5rem;
+        }
+
         button {
-            background: var(--accent-gradient);
-            color: #0f0f11; /* Texto oscuro para contrastar con el botón claro */
             border: none;
-            padding: 12px 28px;
+            padding: 12px 24px;
             font-size: 0.95rem;
-            border-radius: 30px; /* Estilo píldora muy moderno */
+            border-radius: 30px;
             cursor: pointer;
             font-weight: 600;
-            transition: transform 0.1s ease, opacity 0.2s;
+            transition: transform 0.1s ease, opacity 0.2s, background-color 0.3s;
+        }
+
+        #btnSiguiente {
+            background: var(--accent-gradient);
+            color: #0f0f11;
             box-shadow: 0 4px 15px rgba(168, 199, 250, 0.2);
+        }
+
+        #btnPausa {
+            background-color: #2b2d31;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        #btnPausa.pausado {
+            background-color: var(--pause-color);
+            color: #0f0f11;
         }
 
         button:hover {
@@ -125,7 +163,7 @@
 
         #status {
             font-size: 0.85rem;
-            color: #f28b82; /* Rojo suave para errores en tema oscuro */
+            color: #f28b82;
             margin-top: 10px;
             max-width: 90%;
         }
@@ -134,14 +172,28 @@
 <body>
 
 <div class="container">
-    <h1>Elemento Aleatorio</h1>
+    <h1>Selector de Pasos</h1>
     
-    <!-- Aquí se mostrará el elemento seleccionado -->
+    <!-- Indicador de estado -->
+    <div id="estado-timer">● Activo</div>
+
+    <!-- Muestra el elemento seleccionado -->
     <div id="visualizador">Cargando...</div>
 
     <div class="controles">
+        <!-- Selector de Ritmo -->
         <div class="selector-wrapper">
-            <label for="intervalo">Intervalo:</label>
+            <label for="ritmo">Ritmo:</label>
+            <select id="ritmo">
+                <option value="cumbia.txt">Cumbia</option>
+                <option value="bachata.txt">Bachata</option>
+                <option value="salsa.txt">Salsa</option>
+            </select>
+        </div>
+
+        <!-- Selector de Intervalo -->
+        <div class="selector-wrapper">
+            <label for="intervalo">Cambiar cada:</label>
             <select id="intervalo">
                 <option value="5000">5 segundos</option>
                 <option value="10000">10 segundos</option>
@@ -150,7 +202,12 @@
             </select>
         </div>
         
-        <button id="btnSiguiente">Siguiente</button>
+        <!-- Botones de Acción -->
+        <div class="botones-grupo">
+            <button id="btnPausa">Pausar</button>
+            <button id="btnSiguiente">Siguiente</button>
+        </div>
+
         <div id="status"></div>
     </div>
 </div>
@@ -158,18 +215,25 @@
 <script>
     let elementos = [];
     let temporizador = null;
+    let estaPausado = false;
     
     const visualizador = document.getElementById('visualizador');
+    const selectorRitmo = document.getElementById('ritmo');
     const selectorIntervalo = document.getElementById('intervalo');
     const btnSiguiente = document.getElementById('btnSiguiente');
+    const btnPausa = document.getElementById('btnPausa');
+    const estadoTimer = document.getElementById('estado-timer');
     const statusDiv = document.getElementById('status');
 
-    // 1. Cargar el archivo TXT
+    // Cargar archivo según el ritmo seleccionado
     async function cargarElementos() {
+        const archivoActual = selectorRitmo.value;
+        statusDiv.textContent = "";
+
         try {
-            const respuesta = await fetch('elementos.txt');
+            const respuesta = await fetch(archivoActual);
             if (!respuesta.ok) {
-                throw new Error('No se pudo abrir el archivo elementos.txt');
+                throw new Error(`No se encontró el archivo ${archivoActual}`);
             }
             const texto = await respuesta.text();
             
@@ -182,22 +246,24 @@
                 return;
             }
 
-            statusDiv.textContent = ""; 
             mostrarElementoAleatorio();
+            
+            // Al cambiar de ritmo reanudamos el tiempo si estaba en pausa
+            estaPausado = false;
+            actualizarInterfazPausa();
             iniciarTemporizador();
 
         } catch (error) {
             console.error(error);
             visualizador.textContent = "Error";
-            statusDiv.textContent = "Verifica que 'elementos.txt' esté en la misma carpeta del repositorio de GitHub.";
+            statusDiv.textContent = `Asegúrate de haber creado el archivo '${archivoActual}' en tu repositorio.`;
         }
     }
 
-    // 2. Elegir y mostrar elemento
+    // Elegir y mostrar un elemento aleatorio
     function mostrarElementoAleatorio() {
         if (elementos.length === 0) return;
         
-        // Animación suave de cambio
         visualizador.style.opacity = '0';
         visualizador.style.transform = 'scale(0.95)';
         
@@ -209,24 +275,59 @@
         }, 150);
     }
 
-    // 3. Temporizador
+    // Control del temporizador
     function iniciarTemporizador() {
         clearInterval(temporizador);
+        if (estaPausado) return; // Si está en pausa, no iniciamos el intervalo
+
         const tiempoMs = parseInt(selectorIntervalo.value);
         temporizador = setInterval(() => {
             mostrarElementoAleatorio();
         }, tiempoMs);
     }
 
-    // Eventos
+    // Función para alternar Pausa / Reanudar
+    function alternarPausa() {
+        estaPausado = !estaPausado;
+        actualizarInterfazPausa();
+
+        if (estaPausado) {
+            clearInterval(temporizador);
+        } else {
+            iniciarTemporizador();
+        }
+    }
+
+    // Actualiza la apariencia visual del botón e indicador
+    function actualizarInterfazPausa() {
+        if (estaPausado) {
+            btnPausa.textContent = "Reanudar";
+            btnPausa.classList.add('pausado');
+            estadoTimer.textContent = "❚❚ Pausado";
+            estadoTimer.classList.add('en-pausa');
+        } else {
+            btnPausa.textContent = "Pausar";
+            btnPausa.classList.remove('pausado');
+            estadoTimer.textContent = "● Activo";
+            estadoTimer.classList.remove('en-pausa');
+        }
+    }
+
+    // Escuchadores de eventos
+    selectorRitmo.addEventListener('change', cargarElementos);
     selectorIntervalo.addEventListener('change', iniciarTemporizador);
+
+    btnPausa.addEventListener('click', alternarPausa);
 
     btnSiguiente.addEventListener('click', () => {
         mostrarElementoAleatorio();
-        iniciarTemporizador(); // Reinicia el contador para que no salte inmediatamente después del clic
+        // Si no está pausado, reiniciamos el conteo para dar el tiempo completo del intervalo
+        if (!estaPausado) {
+            iniciarTemporizador();
+        }
     });
 
-    // Arrancar la app
+    // Carga inicial
     cargarElementos();
 </script>
 

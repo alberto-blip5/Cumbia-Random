@@ -16,3 +16,4 @@ Angel con barril M
 Cross int 70
 Embrollo bajo el puente
 70 Interno por cochino
+70 abrazo externo
